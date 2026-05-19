@@ -77,6 +77,7 @@ namespace HSR.NPRShader
         [NonSerialized] private ForwardDrawObjectsPass m_DrawTransparentPass;
         [NonSerialized] private PostProcessPass m_PostProcessPass;
 
+       
         public override void Create()
         {
             m_SceneShadowCasterManager = new ShadowCasterManager(ShadowUsage.Scene);
@@ -149,6 +150,8 @@ namespace HSR.NPRShader
             renderer.EnqueuePass(m_PostProcessPass);
         }
 
+        public static Light overrideMainLightForSelf = null;
+        
         public override void SetupRenderPasses(ScriptableRenderer renderer, in RenderingData renderingData)
         {
             // PreviewCamera 不会执行这部分代码！！！
@@ -159,7 +162,7 @@ namespace HSR.NPRShader
 
             if (m_EnableSelfShadow)
             {
-                m_SelfShadowCasterManager.Cull(in renderingData, PerObjectShadowCasterPass.MaxShadowCount, m_SelfShadowDebugMode);
+                m_SelfShadowCasterManager.Cull(in renderingData, PerObjectShadowCasterPass.MaxShadowCount, m_SelfShadowDebugMode,overrideMainLightForSelf);
                 m_SelfPerObjShadowPass.Setup(m_SelfShadowCasterManager, m_SelfShadowTileResolution, m_SelfShadowDepthBits);
             }
 

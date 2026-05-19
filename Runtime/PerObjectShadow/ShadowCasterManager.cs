@@ -74,14 +74,33 @@ namespace HSR.NPRShader.PerObjectShadow
             }
         }
 
-        public unsafe void Cull(in RenderingData renderingData, int maxCount, bool debugMode)
+        public unsafe void Cull(in RenderingData renderingData, int maxCount, bool debugMode,Light overrideMainLightForSelf = null)
         {
             m_RendererIndexList.Clear();
             m_CullResults.Reset(maxCount);
 
-            if (s_Casters.Count <= 0 || !TryGetMainLight(in renderingData, out VisibleLight mainLight))
+            // 1. 声明一个矩阵变量，用来存最终使用的光源矩阵
+            Matrix4x4 mainLightMatrix;
+            
+            if (overrideMainLightForSelf != null)
             {
-                return;
+                // 如果传入了覆盖的光源，直接获取它的 localToWorldMatrix
+                mainLightMatrix = overrideMainLightForSelf.transform.localToWorldMatrix;
+        
+                // 此时只需要判断 s_Casters 即可
+                if (s_Casters.Count <= 0)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                // 否则，走原本的 URP 主光源获取逻辑
+                if (s_Casters.Count <= 0 || !TryGetMainLight(in renderingData, out VisibleLight mainLight))
+                {
+                    return;
+                }
+                mainLightMatrix = mainLight.localToWorldMatrix;
             }
 
             Camera camera;
@@ -107,7 +126,7 @@ namespace HSR.NPRShader.PerObjectShadow
                 Usage = Usage,
                 FrustumEightCorners = frustumCorners,
                 CameraLocalToWorldMatrix = cameraTransform.localToWorldMatrix,
-                MainLightLocalToWorldMatrix = mainLight.localToWorldMatrix,
+                MainLightLocalToWorldMatrix = mainLightMatrix,
             };
 
             foreach (var caster in s_Casters)
